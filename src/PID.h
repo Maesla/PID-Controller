@@ -17,6 +17,9 @@ public:
   double Ki;
   double Kd;
 
+  double cte_previous;
+  double steer;
+
   /*
   * Constructor
   */
@@ -41,6 +44,12 @@ public:
   * Calculate the total PID error.
   */
   double TotalError();
+
+  int count;
+
+private:
+  double previous_time;
+  double GetDeltaTime();
 };
 
 #endif /* PID_H */

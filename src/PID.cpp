@@ -1,4 +1,5 @@
 #include "PID.h"
+#include <time.h>       /* time_t, struct tm, difftime, time, mktime */
 
 using namespace std;
 
@@ -10,12 +11,45 @@ PID::PID() {}
 
 PID::~PID() {}
 
-void PID::Init(double Kp, double Ki, double Kd) {
+void PID::Init(double Kp, double Ki, double Kd)
+{
+  this->Kp = Kp;
+  this->Ki = Ki;
+  this->Kd = Kd;
+
+  p_error = 0.0f;
+  i_error = 0.0f;
+  d_error = 0.0f;
+
+  previous_time = 0.0f;
+
+  count = 0;
 }
 
-void PID::UpdateError(double cte) {
+void PID::UpdateError(double cte)
+{
+
+  double dt = GetDeltaTime();
+
+  p_error = cte;
+  d_error = (cte - cte_previous)*dt;
+  cte_previous = cte;
+  i_error += cte*dt;
+
+  steer = -Kp*p_error - Ki*i_error - Kd*d_error;
+
+  count ++;
 }
 
 double PID::TotalError() {
+}
+
+double PID::GetDeltaTime()
+{
+  double current_time = clock();
+  double dt = (current_time - previous_time)/CLOCKS_PER_SEC;
+  previous_time = current_time;
+
+  return dt;
 }
 
