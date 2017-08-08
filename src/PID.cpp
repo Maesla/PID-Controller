@@ -30,13 +30,16 @@ void PID::UpdateError(double cte)
 {
 
   double dt = GetDeltaTime();
+  dt = 1.0f;
 
   p_error = cte;
-  d_error = (cte - cte_previous)*dt;
+
+  d_error = (cte - cte_previous)/dt;
   cte_previous = cte;
+
   i_error += cte*dt;
 
-  steer = -Kp*p_error - Ki*i_error - Kd*d_error;
+  value = -Kp*p_error - Ki*i_error - Kd*d_error;
 
   count ++;
 }

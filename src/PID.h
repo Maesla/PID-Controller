@@ -18,7 +18,7 @@ public:
   double Kd;
 
   double cte_previous;
-  double steer;
+  double value;
 
   /*
   * Constructor
