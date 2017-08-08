@@ -28,6 +28,112 @@ std::string hasData(std::string s) {
   return "";
 }
 
+
+
+
+bool do_twiddle;
+int const TWIDDLE_MAX_FRAME_COUNT = 1;
+int param_iter;
+
+double p[3] = {0.0f,0.0f,0.0f};
+double dp [3] = {1.0f,1.0f,1.0f};
+
+int const TWIDDLE_PARAM_COUNT = 3;
+double const TWIDDLE_TOL = 0.2;
+
+double best_error;
+
+//FLAGS
+bool is_init = false;
+bool is_increasing_parameter = false;
+bool is_decreasing_parameter = false;
+
+
+void reset_simulator(uWS::WebSocket<uWS::SERVER>& ws)
+{
+  // reset
+  std::string msg("42[\"reset\", {}]");
+  ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
+}
+
+
+void Twiddle(PID &pid, uWS::WebSocket<uWS::SERVER>& ws)
+{
+test();
+  if(!do_twiddle)
+    return;
+
+  bool is_running = pid.count < TWIDDLE_MAX_FRAME_COUNT;
+  if(is_running)
+    return;
+
+  double dp_sum = 0.0f;
+  for(int i = 0; i < TWIDDLE_PARAM_COUNT; i++)
+  {
+    dp_sum += dp[i];
+  }
+
+  if (dp_sum < TWIDDLE_TOL)
+  {
+    do_twiddle = false;
+    return;
+  }
+
+  if (is_init)
+  {
+    //p[3] = new{0.0f,0.0f,0.0f};
+    //dp [3] = new{1.0f,1.0f,1.0f};
+
+    param_iter = 0;
+    best_error = 99999;
+
+    is_init = true;
+    is_increasing_parameter = false;
+    is_decreasing_parameter = false;
+  }
+
+  if (!is_decreasing_parameter)
+  {
+    if (!is_increasing_parameter)
+    {
+      p[param_iter] += dp[param_iter];
+      is_increasing_parameter = true;
+      pid.Init(p[0],p[1],p[2]);
+      reset_simulator(ws);
+    }
+
+    double error = pid.average_error;
+    if(error < best_error)
+    {
+      best_error = error;
+      dp[param_iter]*=1.1f;
+    }
+    else
+    {
+      p[param_iter] -= 2.0f*dp[param_iter];
+      is_decreasing_parameter = true;
+      pid.Init(p[0],p[1],p[2]);
+      reset_simulator(ws);
+    }
+  }
+
+  double error = pid.average_error;
+  if(error < best_error)
+  {
+    best_error = error;
+    dp[param_iter]*=1.1f;
+  }
+  else
+  {
+    p[param_iter] += dp[param_iter];
+    dp[param_iter] *= 0.9;
+  }
+
+  param_iter = (param_iter+1)%TWIDDLE_PARAM_COUNT;
+  is_increasing_parameter = false;
+  is_decreasing_parameter = false;
+}
+
 int main()
 {
   uWS::Hub h;
@@ -58,6 +164,21 @@ int main()
           * NOTE: Feel free to play around with the throttle and speed. Maybe use
           * another PID controller to control the speed!
           */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
           pidSteer.UpdateError(cte);
           steer_value = pidSteer.value;
           // DEBUG
