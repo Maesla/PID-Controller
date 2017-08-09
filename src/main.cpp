@@ -33,8 +33,8 @@ std::string hasData(std::string s) {
 
 
 
-bool do_twiddle = true;
-int const TWIDDLE_MAX_FRAME_COUNT = 50;
+bool do_twiddle = false;
+int const TWIDDLE_MAX_FRAME_COUNT = 500;
 int param_iter;
 
 //Steer
@@ -248,8 +248,9 @@ int main()
           pidSpeed.UpdateError(speed -7.5f);
           throttle = pidSpeed.value;
           throttle = clamp(throttle, 0, 1);
+          throttle = 0.1f;
           // DEBUG
-          //std::cout << "CTE: " << cte << " Steering Value: " << steer_value  << " Count: " << pidSteer.count << std::endl;
+          std::cout << "CTE: " << cte << " Steer: " << steer_value  << " Throttle: " << throttle << std::endl;
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
