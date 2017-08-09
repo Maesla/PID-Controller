@@ -43,7 +43,7 @@ int param_iter;
 
 //Speed
 double p[3] = {0.0476519, -8.561e-05, 0.201947};
-double dp [3] =  {0.00541994, 7.07348e-05, 0.0245334}
+double dp [3] =  {0.00541994, 7.07348e-05, 0.0245334};
 
 int const TWIDDLE_PARAM_COUNT = 3;
 double const TWIDDLE_TOL = 0.0001;
