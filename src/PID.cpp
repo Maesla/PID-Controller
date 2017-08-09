@@ -23,7 +23,9 @@ void PID::Init(double Kp, double Ki, double Kd)
 
   previous_time = 0.0f;
 
-  count = 0;
+  count = 0.0f;
+  total_error = 0.0f;
+  average_error = 0.0f;
 }
 
 void PID::UpdateError(double cte)
@@ -41,7 +43,7 @@ void PID::UpdateError(double cte)
 
   value = -Kp*p_error - Ki*i_error - Kd*d_error;
 
-  total_error += cte;
+  total_error += (cte*cte);
   count ++;
   average_error = total_error/count;
 }

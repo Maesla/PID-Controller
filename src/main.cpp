@@ -34,11 +34,16 @@ std::string hasData(std::string s) {
 
 
 bool do_twiddle = true;
-int const TWIDDLE_MAX_FRAME_COUNT = 20;
+int const TWIDDLE_MAX_FRAME_COUNT = 50;
 int param_iter;
 
-double p[3] = {0.0f,0.0f,0.0f};
-double dp [3] = {1.0f,1.0f,1.0f};
+//Steer
+double p[3] = {0.121459, 0.000969774, 0.18647};
+double dp [3] = {0.00166699, 0.000334758, 0.00111592};
+
+//Speed
+//double p[3] = {0.0362057, -0.00017461, 0.22648};
+//double dp [3] =  {0.0114462, 1.39898e-05, 0.0569926};
 
 int const TWIDDLE_PARAM_COUNT = 3;
 double const TWIDDLE_TOL = 0.0001;
@@ -72,7 +77,7 @@ void Twiddle(PID &pid, uWS::WebSocket<uWS::SERVER>& ws)
     cout << "Twiddle Starting!" << endl;
 
     param_iter = 0;
-    best_error = 99999;
+    best_error = 9999999999;
 
     is_init = true;
     is_increasing_parameter = false;
@@ -85,7 +90,7 @@ void Twiddle(PID &pid, uWS::WebSocket<uWS::SERVER>& ws)
   bool is_running = pid.count < TWIDDLE_MAX_FRAME_COUNT;
   if(is_running)
   {
-    cout << "Twiddle Calculating error:" <<pid.count << "/" << TWIDDLE_MAX_FRAME_COUNT << endl;
+    cout << "Twiddle Calculating. Value: " << pid.value << " Error:" << pid.average_error << " " << pid.count << "/" << TWIDDLE_MAX_FRAME_COUNT << endl;
 
     return;
   }
@@ -99,10 +104,11 @@ void Twiddle(PID &pid, uWS::WebSocket<uWS::SERVER>& ws)
   if (dp_sum < TWIDDLE_TOL)
   {
     cout << "--------------------->Twiddle Completed!" << endl;
+    cout << "--------------------->Best error " << best_error << endl;
 
     for (int i = 0; i < TWIDDLE_PARAM_COUNT; i++)
     {
-      cout << "Param: " << i << " Value: " << p[i];
+      cout << "Param: " << i << " Value: " << p[i] <<endl;
     }
     do_twiddle = false;
     return;
@@ -113,41 +119,76 @@ void Twiddle(PID &pid, uWS::WebSocket<uWS::SERVER>& ws)
   {
     if (!is_increasing_parameter)
     {
+
       p[param_iter] += dp[param_iter];
+
+      cout << "--------------------->Trying Increasing param: " << param_iter << endl;
+      cout << "ParamIdex: " << param_iter << " Values: "<< p[0] << " " << p[1] << " " << p[2] << endl;
+      cout << "Deltas: "<< dp[0] << " " << dp[1] << " " << dp[2] << endl;
+      cout << "--------------------->Best error " << best_error << endl;
+
+
       is_increasing_parameter = true;
       pid.Init(p[0],p[1],p[2]);
       reset_simulator(ws);
+      return;
     }
 
     double error = pid.average_error;
     if(error < best_error)
     {
-      cout << "--------------------->Twiddle New Best Error Increasing! ParamIdex: " << param_iter << " Values: "<< p[0] << " " << p[1] << " " << p[2] << endl;
       best_error = error;
       dp[param_iter]*=1.1f;
+
+      cout << "--------------------->Twiddle New Best Error Increasing!" << endl;
+      cout << "--------------------->Best error " << error << endl;
+      cout << "ParamIdex: " << param_iter << " Values: "<< p[0] << " " << p[1] << " " << p[2] << endl;
+      cout << "Deltas: "<< dp[0] << " " << dp[1] << " " << dp[2] << endl;
+
+
+      param_iter = (param_iter+1)%TWIDDLE_PARAM_COUNT;
+      is_increasing_parameter = false;
+      is_decreasing_parameter = false;
+
+      return;
 
     }
     else
     {
       p[param_iter] -= 2.0f*dp[param_iter];
       is_decreasing_parameter = true;
+
+      cout << "--------------------->Trying Decreasing param: " << param_iter << endl;
+      cout << "ParamIdex: " << param_iter << " Values: "<< p[0] << " " << p[1] << " " << p[2] << endl;
+      cout << "Deltas: "<< dp[0] << " " << dp[1] << " " << dp[2] << endl;
+      cout << "--------------------->Best error " << best_error << endl;
+
       pid.Init(p[0],p[1],p[2]);
       reset_simulator(ws);
+
+      return;
     }
   }
 
   double error = pid.average_error;
   if(error < best_error)
   {
-    cout << "--------------------->Twiddle New Best Error Decreasing! ParamIdex: " << param_iter << " Values: "<< p[0] << " " << p[1] << " " << p[2] << endl;
     best_error = error;
     dp[param_iter]*=1.1f;
+
+    cout << "--------------------->Twiddle New Best Error Decreasing!" << endl;
+    cout << "ParamIdex: " << param_iter << " Values: "<< p[0] << " " << p[1] << " " << p[2] << endl;
+    cout << "Deltas: "<< dp[0] << " " << dp[1] << " " << dp[2] << endl;
+
   }
   else
   {
-    cout << "--------------------->Twiddle best error not found ParamIdex: " << param_iter << " Values: "<< p[0] << " " << p[1] << " " << p[2] << endl;
     p[param_iter] += dp[param_iter];
     dp[param_iter] *= 0.9;
+
+    cout << "--------------------->Trying Decreasing delta param: " << param_iter << endl;
+    cout << "ParamIdex: " << param_iter << " Values: "<< p[0] << " " << p[1] << " " << p[2] << endl;
+    cout << "Deltas: "<< dp[0] << " " << dp[1] << " " << dp[2] << endl;
   }
 
   param_iter = (param_iter+1)%TWIDDLE_PARAM_COUNT;
@@ -170,10 +211,12 @@ int main()
   uWS::Hub h;
 
   PID pidSteer;
+  PID pidSpeed;
   // TODO: Initialize the pid variable.
-  pidSteer.Init(1.0f, 0.0f, 0.0f);
+  pidSteer.Init(0.121459, 0.000969774, 0.18647);
+  pidSpeed.Init(0.0362057,-0.00017461, 0.22648);
 
-  h.onMessage([&pidSteer](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+  h.onMessage([&pidSteer, &pidSpeed](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -197,9 +240,14 @@ int main()
           * another PID controller to control the speed!
           */
           Twiddle(pidSteer, ws);
+
           pidSteer.UpdateError(cte);
           steer_value = pidSteer.value;
           steer_value = clamp(steer_value, -1, 1);
+
+          pidSpeed.UpdateError(speed -7.5f);
+          throttle = pidSpeed.value;
+          throttle = clamp(throttle, 0, 1);
           // DEBUG
           //std::cout << "CTE: " << cte << " Steering Value: " << steer_value  << " Count: " << pidSteer.count << std::endl;
 
