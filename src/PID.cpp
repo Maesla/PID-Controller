@@ -17,6 +17,12 @@ void PID::Init(double Kp, double Ki, double Kd)
   this->Ki = Ki;
   this->Kd = Kd;
 
+  ResetErrors();
+
+}
+
+void PID::ResetErrors()
+{
   p_error = 0.0f;
   i_error = 0.0f;
   d_error = 0.0f;
@@ -26,6 +32,7 @@ void PID::Init(double Kp, double Ki, double Kd)
   count = 0.0f;
   total_error = 0.0f;
   average_error = 0.0f;
+
 }
 
 void PID::UpdateError(double cte)

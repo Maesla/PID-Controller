@@ -38,12 +38,12 @@ int const TWIDDLE_MAX_FRAME_COUNT = 500;
 int param_iter;
 
 //Steer
-double p[3] = {0.121459, 0.000969774, 0.18647};
-double dp [3] = {0.00166699, 0.000334758, 0.00111592};
+//double p[3] = {0.121459, 0.000969774, 0.18647};
+//double dp [3] = {0.00166699, 0.000334758, 0.00111592};
 
 //Speed
-//double p[3] = {0.0362057, -0.00017461, 0.22648};
-//double dp [3] =  {0.0114462, 1.39898e-05, 0.0569926};
+double p[3] = {0.0476519, -8.561e-05, 0.201947};
+double dp [3] =  {0.00541994, 7.07348e-05, 0.0245334}
 
 int const TWIDDLE_PARAM_COUNT = 3;
 double const TWIDDLE_TOL = 0.0001;
@@ -64,7 +64,7 @@ void reset_simulator(uWS::WebSocket<uWS::SERVER>& ws)
 }
 
 
-void Twiddle(PID &pid, uWS::WebSocket<uWS::SERVER>& ws)
+void Twiddle(PID &pid, PID &otherPid, uWS::WebSocket<uWS::SERVER>& ws)
 {
   if(!do_twiddle)
     return;
@@ -84,6 +84,7 @@ void Twiddle(PID &pid, uWS::WebSocket<uWS::SERVER>& ws)
     is_decreasing_parameter = false;
 
     pid.Init(p[0],p[1],p[2]);
+    otherPid.ResetErrors();
     reset_simulator(ws);
   }
 
@@ -130,6 +131,7 @@ void Twiddle(PID &pid, uWS::WebSocket<uWS::SERVER>& ws)
 
       is_increasing_parameter = true;
       pid.Init(p[0],p[1],p[2]);
+      otherPid.ResetErrors();
       reset_simulator(ws);
       return;
     }
@@ -164,6 +166,7 @@ void Twiddle(PID &pid, uWS::WebSocket<uWS::SERVER>& ws)
       cout << "--------------------->Best error " << best_error << endl;
 
       pid.Init(p[0],p[1],p[2]);
+      otherPid.ResetErrors();
       reset_simulator(ws);
 
       return;
@@ -214,7 +217,7 @@ int main()
   PID pidSpeed;
   // TODO: Initialize the pid variable.
   pidSteer.Init(0.124463, 0.00167277, 0.18647);
-  pidSpeed.Init(0.0362057,-0.00017461, 0.22648);
+  pidSpeed.Init(0.0476519, -8.561e-05, 0.201947);
 
   h.onMessage([&pidSteer, &pidSpeed](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -239,7 +242,7 @@ int main()
           * NOTE: Feel free to play around with the throttle and speed. Maybe use
           * another PID controller to control the speed!
           */
-          Twiddle(pidSteer, ws);
+          Twiddle(pidSpeed, pidSteer, ws);
 
           pidSteer.UpdateError(cte);
           steer_value = pidSteer.value;
@@ -250,13 +253,13 @@ int main()
           throttle = clamp(throttle, 0, 1);
           //throttle = 0.1f;
           // DEBUG
-          //std::cout << "CTE: " << cte << " Steer: " << steer_value  << " Throttle: " << throttle << std::endl;
+         // std::cout << "CTE: " << cte << " Steer: " << steer_value  << " Throttle: " << throttle << std::endl;
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = throttle;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          //std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
