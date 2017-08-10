@@ -27,6 +27,8 @@ void PID::ResetErrors()
   i_error = 0.0f;
   d_error = 0.0f;
 
+  cte_previous = 0.0f;
+
   previous_time = 0.0f;
 
   count = 0.0f;
@@ -38,8 +40,8 @@ void PID::ResetErrors()
 void PID::UpdateError(double cte)
 {
 
-  double dt = GetDeltaTime();
-  dt = 1.0f;
+  dt = GetDeltaTime();
+  //dt = 1.0f;
 
   p_error = cte;
 
@@ -61,9 +63,9 @@ double PID::TotalError() {
 double PID::GetDeltaTime()
 {
   double current_time = clock();
-  double dt = (current_time - previous_time)/CLOCKS_PER_SEC;
+  double delta_time = (current_time - previous_time)/CLOCKS_PER_SEC;
   previous_time = current_time;
 
-  return dt;
+  return delta_time;
 }
 

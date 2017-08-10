@@ -21,6 +21,7 @@ public:
 
   double cte_previous;
   double value;
+  double dt;
 
   /*
   * Constructor

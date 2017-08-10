@@ -33,20 +33,22 @@ std::string hasData(std::string s) {
 
 
 
-bool do_twiddle = false;
-int const TWIDDLE_MAX_FRAME_COUNT = 500;
+bool do_twiddle = true;
+int const TWIDDLE_MAX_FRAME_COUNT = 80;
 int param_iter;
 
 //Steer
+double p[3] = {0.111308, 0.000, 0.000383482};
+double dp [3] = {0.0000, 0.001, 0.0000};
 //double p[3] = {0.121459, 0.000969774, 0.18647};
-//double dp [3] = {0.00166699, 0.000334758, 0.00111592};
+//double dp [3] = {0.01, 0.0001, 0.01};
 
 //Speed
-double p[3] = {0.0476519, -8.561e-05, 0.201947};
-double dp [3] =  {0.00541994, 7.07348e-05, 0.0245334};
+//double p[3] = {0.0476519, -8.561e-05, 0.201947};
+//double dp [3] =  {0.00541994, 7.07348e-05, 0.0245334};
 
 int const TWIDDLE_PARAM_COUNT = 3;
-double const TWIDDLE_TOL = 0.0001;
+double const TWIDDLE_TOL = 0.000001;
 
 double best_error;
 
@@ -71,9 +73,6 @@ void Twiddle(PID &pid, PID &otherPid, uWS::WebSocket<uWS::SERVER>& ws)
 
   if (!is_init)
   {
-    //p[3] = new{0.0f,0.0f,0.0f};
-    //dp [3] = new{1.0f,1.0f,1.0f};
-
     cout << "Twiddle Starting!" << endl;
 
     param_iter = 0;
@@ -91,7 +90,7 @@ void Twiddle(PID &pid, PID &otherPid, uWS::WebSocket<uWS::SERVER>& ws)
   bool is_running = pid.count < TWIDDLE_MAX_FRAME_COUNT;
   if(is_running)
   {
-    cout << "Twiddle Calculating. Value: " << pid.value << " Error:" << pid.average_error << " " << pid.count << "/" << TWIDDLE_MAX_FRAME_COUNT << endl;
+    cout << "Twiddle Calculating. Value: " << pid.value << " Error:" << pid.average_error << " " << pid.count << "/" << TWIDDLE_MAX_FRAME_COUNT << " dt: " << pid.dt << endl;
 
     return;
   }
@@ -115,6 +114,16 @@ void Twiddle(PID &pid, PID &otherPid, uWS::WebSocket<uWS::SERVER>& ws)
     return;
   }
 
+
+  bool applyParameter = dp[param_iter] > 0.00000;
+  if (!applyParameter)
+  {
+    cout << "--------------------->dp[" << param_iter <<"] is 0.0000. Going to next parameter"<< endl;
+    param_iter = (param_iter+1)%TWIDDLE_PARAM_COUNT;
+    is_increasing_parameter = false;
+    is_decreasing_parameter = false;
+    return;
+  }
 
   if (!is_decreasing_parameter)
   {
@@ -216,7 +225,7 @@ int main()
   PID pidSteer;
   PID pidSpeed;
   // TODO: Initialize the pid variable.
-  pidSteer.Init(0.124463, 0.00167277, 0.18647);
+  pidSteer.Init(0.111308, 0.00670967, 0.000383482);
   pidSpeed.Init(0.0476519, -8.561e-05, 0.201947);
 
   h.onMessage([&pidSteer, &pidSpeed](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
@@ -242,7 +251,7 @@ int main()
           * NOTE: Feel free to play around with the throttle and speed. Maybe use
           * another PID controller to control the speed!
           */
-          Twiddle(pidSpeed, pidSteer, ws);
+          Twiddle(pidSteer,pidSpeed, ws);
 
           pidSteer.UpdateError(cte);
           steer_value = pidSteer.value;
@@ -251,7 +260,7 @@ int main()
           pidSpeed.UpdateError(speed -7.5f);
           throttle = pidSpeed.value;
           throttle = clamp(throttle, 0, 1);
-          //throttle = 0.1f;
+          throttle = 0.1f;
           // DEBUG
          // std::cout << "CTE: " << cte << " Steer: " << steer_value  << " Throttle: " << throttle << std::endl;
 
@@ -259,7 +268,7 @@ int main()
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = throttle;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          //std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
