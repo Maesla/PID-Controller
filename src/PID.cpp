@@ -29,7 +29,7 @@ void PID::ResetErrors()
 
   cte_previous = 0.0f;
 
-  previous_time = 0.0f;
+  previous_time = clock();
 
   count = 0.0f;
   total_error = 0.0f;

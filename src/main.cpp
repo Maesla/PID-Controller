@@ -33,13 +33,13 @@ std::string hasData(std::string s) {
 
 
 
-bool do_twiddle = true;
+bool do_twiddle = false;
 int const TWIDDLE_MAX_FRAME_COUNT = 200;
 int param_iter;
 
 //Steer
-double p[3] = {0.111308, 0.00670967, 0.000383482};
-double dp [3] = {0.1, 0.0001, 0.0001};
+double p[3] = {0.127937, 0.00670967, 0.000980446};
+double dp [3] = {0.01, 0.000, 0.0001};
 //double p[3] = {0.121459, 0.000969774, 0.18647};
 //double dp [3] = {0.01, 0.0001, 0.01};
 
@@ -226,7 +226,7 @@ int main()
   PID pidSteer;
   PID pidSpeed;
   // TODO: Initialize the pid variable.
-  pidSteer.Init(0.111308, 0.00670967, 0.000383482);
+  pidSteer.Init(0.127937, 0.00704795, 0.00090446);
   pidSpeed.Init(0.0544301, 0.0, 0.000309098);
 
   h.onMessage([&pidSteer, &pidSpeed](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
